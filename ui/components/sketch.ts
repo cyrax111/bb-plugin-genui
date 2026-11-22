@@ -1,12 +1,26 @@
 // Turns a model's Mermaid source into an Excalidraw-looking diagram: Mermaid's
 // hand-drawn look (rough strokes, hachure fills) in Excalifont, in Excalidraw's
-// palette. Excalidraw's dark theme is its light canvas through
+// palette. The Diagram look setting can swap the strokes for Mermaid's classic
+// or neo look, drawn in a plain sans-serif on the same palette. Excalidraw's dark theme is its light canvas through
 // `invert(93%) hue-rotate(180deg)`; the dark palette here is that filter
 // worked out per colour, so the SVG is drawn dark natively and BB's zoom view,
 // which copies the SVG elsewhere, shows it right too. Pure: no DOM.
 
 /** The font family the diagram text uses; Excalifont is loaded by sketchFont.ts. */
 export const SKETCH_FONT_FAMILY = "Excalifont, 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive";
+
+/** The font family of the classic and neo looks: handwriting only suits rough strokes. */
+export const PLAIN_FONT_FAMILY = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+
+/** Mermaid's looks, as the Diagram look setting offers them. */
+export const DIAGRAM_LOOKS = ["handDrawn", "classic", "neo"] as const;
+export type DiagramLook = (typeof DIAGRAM_LOOKS)[number];
+export const DEFAULT_DIAGRAM_LOOK: DiagramLook = "handDrawn";
+
+/** A stored setting value as a look; anything unknown is the default. */
+export function diagramLook(value: unknown): DiagramLook {
+  return (DIAGRAM_LOOKS as readonly unknown[]).includes(value) ? (value as DiagramLook) : DEFAULT_DIAGRAM_LOOK;
+}
 
 /** Excalidraw's stroke and fill colours (its default palette, light theme). */
 const LIGHT = {
@@ -46,10 +60,13 @@ export function sketchPalette(dark: boolean): SketchPalette {
 const SEED = 7;
 
 /** `backdrop` is the colour the diagram is drawn on; edge labels are cut out of the lines with it. */
-function frontmatter(colors: SketchPalette, backdrop: string): string {
+function frontmatter(colors: SketchPalette, backdrop: string, look: DiagramLook): string {
+  const handDrawn = look === "handDrawn";
+  const fontFamily = handDrawn ? SKETCH_FONT_FAMILY : PLAIN_FONT_FAMILY;
   const variables: Record<string, string> = {
-    fontFamily: SKETCH_FONT_FAMILY,
-    fontSize: "17px",
+    fontFamily,
+    // Excalifont runs small for its size.
+    fontSize: handDrawn ? "17px" : "16px",
     background: backdrop,
     primaryColor: colors.blue,
     mainBkg: colors.blue,
@@ -83,11 +100,11 @@ function frontmatter(colors: SketchPalette, backdrop: string): string {
   return [
     "---",
     "config:",
-    "  look: handDrawn",
-    `  handDrawnSeed: ${SEED}`,
+    `  look: ${look}`,
+    ...(handDrawn ? [`  handDrawnSeed: ${SEED}`] : []),
     "  theme: base",
     "  darkMode: false",
-    `  fontFamily: "${SKETCH_FONT_FAMILY}"`,
+    `  fontFamily: "${fontFamily}"`,
     "  themeVariables:",
     ...Object.entries(variables).map(([name, value]) => `    ${name}: "${value}"`),
     "---",
@@ -153,13 +170,13 @@ export function shapeClassLines(source: string, colors: SketchPalette = LIGHT): 
 /**
  * The source BB's Mermaid renderer gets. A diagram that brings its own front
  * matter or init directive keeps it untouched; one with its own class or style
- * lines keeps its colours but still gets the hand-drawn look. The diagram has
- * no canvas of its own: it is drawn on `backdrop`, Excalidraw's canvas colour
- * if none is given.
+ * lines keeps its colours but still gets the chosen look (hand-drawn unless
+ * the Diagram look setting says otherwise). The diagram has no canvas of its
+ * own: it is drawn on `backdrop`, Excalidraw's canvas colour if none is given.
  */
-export function sketchMermaid(source: string, dark = false, backdrop?: string): string {
+export function sketchMermaid(source: string, dark = false, backdrop?: string, look: DiagramLook = DEFAULT_DIAGRAM_LOOK): string {
   const trimmed = source.trim();
   if (hasOwnStyling(trimmed)) return trimmed;
   const colors = sketchPalette(dark);
-  return [frontmatter(colors, backdrop ?? colors.canvas), trimmed, ...shapeClassLines(trimmed, colors)].join("\n");
+  return [frontmatter(colors, backdrop ?? colors.canvas, look), trimmed, ...shapeClassLines(trimmed, colors)].join("\n");
 }

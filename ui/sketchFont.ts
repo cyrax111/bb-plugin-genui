@@ -27,12 +27,15 @@ function load(fetchFont: () => Promise<{ dataUrl: string }>): Promise<void> {
   return loading;
 }
 
-/** True once Excalifont is loaded, or once waiting for it stopped. */
-export function useSketchFont(): boolean {
+/**
+ * True once Excalifont is loaded, or once waiting for it stopped; always true
+ * when `wanted` is false (a diagram look drawn in a plain font), which loads nothing.
+ */
+export function useSketchFont(wanted = true): boolean {
   const rpc = useRpc<typeof rpcContract>();
   const [ready, setReady] = useState(settled);
   useEffect(() => {
-    if (ready) return;
+    if (ready || !wanted) return;
     let live = true;
     const done = () => {
       if (live) setReady(true);
@@ -43,6 +46,6 @@ export function useSketchFont(): boolean {
       live = false;
       clearTimeout(timer);
     };
-  }, [rpc, ready]);
-  return ready;
+  }, [rpc, ready, wanted]);
+  return ready || !wanted;
 }

@@ -18,7 +18,8 @@ import { finiteNumber, optionalText, text, type Props } from "../values";
 import { DIAGRAM_SVG, DiagramDetails, DiagramViewer } from "./diagram";
 import { ErrorLine } from "./display";
 import { parseDetails } from "./explain-logic";
-import { sketchMermaid } from "./sketch";
+import { useDiagramLook } from "./diagramLook";
+import { sketchMermaid, type DiagramLook } from "./sketch";
 import { usePanZoom } from "./viewer";
 
 /** Language names models write → the file extension BB detects languages by. */
@@ -285,7 +286,7 @@ const DRAWING_CSS = `
 const OPEN_BUTTON = 'button[aria-label="Open Mermaid diagram"]';
 
 /**
- * Each drawing's last height, by theme, width and source, kept across reloads
+ * Each drawing's last height, by theme, look, width and source, kept across reloads
  * (a page opens a thread's old diagrams for the first time too); bounded.
  */
 const HEIGHTS_STORAGE = "bb.genui.drawnHeights";
@@ -326,12 +327,14 @@ function hash(text: string): string {
  * never drawn here keeps the tallest of its placeholders (the font loading,
  * then BB's "Rendering diagram..."), so it moves once, when it draws.
  */
-function useDrawnHeight(element: RefObject<HTMLDivElement | null>, dark: boolean, source: string): void {
+function useDrawnHeight(element: RefObject<HTMLDivElement | null>, dark: boolean, look: DiagramLook, source: string): void {
   useLayoutEffect(() => {
     const box = element.current;
     if (box === null) return;
-    // Wide diagrams scale to the width, so their height depends on it.
-    const key = `${dark ? "d" : "l"}:${Math.round(box.clientWidth / 40)}:${hash(source)}`;
+    // Wide diagrams scale to the width, so their height depends on it. Hand-drawn
+    // keys carry no look, so heights stored before the look setting still apply.
+    const style = look === "handDrawn" ? "" : `${look}:`;
+    const key = `${dark ? "d" : "l"}:${style}${Math.round(box.clientWidth / 40)}:${hash(source)}`;
     const drawn = () => box.querySelector("svg[aria-roledescription]") !== null;
     // Drawn, or BB showing the source instead (its toggle, or a diagram it couldn't draw).
     const settled = () => drawn() || box.querySelector("pre") !== null;
@@ -367,21 +370,24 @@ function useDrawnHeight(element: RefObject<HTMLDivElement | null>, dark: boolean
       content.disconnect();
       release();
     };
-  }, [element, dark, source]);
+  }, [element, dark, look, source]);
 }
 
 /**
  * A Mermaid diagram, drawn by BB's chat markdown exactly like a ```mermaid
  * fence in a reply (source toggle and copy included), in the Excalidraw
  * style (sketch.ts): hand-drawn strokes in Excalifont, in its dark palette
- * under BB's dark theme. It has no frame or canvas of its own: it is drawn on
+ * under BB's dark theme, or the classic or neo look the Diagram look setting
+ * picks, on the same palette. It has no frame or canvas of its own: it is drawn on
  * whatever it sits in, and edge labels take that colour. Nodes named in
  * `details` open their detail under the diagram (diagram.tsx). A pinch or
  * ⌘/Ctrl + scroll zooms it in place; BB's open button shows it full screen
  * in DiagramViewer.
  */
 export function Diagram({ props }: { props: Props }) {
-  const fontReady = useSketchFont();
+  const look = useDiagramLook();
+  // Only the hand-drawn look writes in Excalifont.
+  const fontReady = useSketchFont(look === "handDrawn");
   const dark = useDarkTheme();
   const host = useRef<HTMLDivElement>(null);
   const drawing = useRef<HTMLDivElement>(null);
@@ -393,7 +399,7 @@ export function Diagram({ props }: { props: Props }) {
   const [full, setFull] = useState<{ readonly markup: string; readonly size: { width: number; height: number } } | null>(null);
   const backdrop = useBackdropColor(host, dark);
   const source = text(props.mermaid).trim();
-  useDrawnHeight(drawing, dark, source);
+  useDrawnHeight(drawing, dark, look, source);
   // The SVG's frame in BB's block is what zooms; its parent, the block's body, is the pane.
   const frameOf = () => surface?.querySelector(DIAGRAM_SVG)?.parentElement ?? null;
   const zoom = usePanZoom(surface, {
@@ -449,7 +455,7 @@ export function Diagram({ props }: { props: Props }) {
     >
       {fontReady && backdrop !== null ? (
         <Markdown
-          content={`${fence}mermaid\n${sketchMermaid(source, dark, backdrop)}\n${fence}`}
+          content={`${fence}mermaid\n${sketchMermaid(source, dark, backdrop, look)}\n${fence}`}
           className="genui-drawing min-w-0 text-sm"
         />
       ) : (

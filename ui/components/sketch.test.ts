@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { darkened, shapeClassLines, sketchMermaid, sketchPalette } from "./sketch";
+import { diagramLook, darkened, PLAIN_FONT_FAMILY, shapeClassLines, SKETCH_FONT_FAMILY, sketchMermaid, sketchPalette } from "./sketch";
 
 describe("darkened", () => {
   // Excalidraw's dark canvas is its white canvas through invert(93%) hue-rotate(180deg).
@@ -14,6 +14,28 @@ describe("sketchMermaid", () => {
     const out = sketchMermaid("flowchart LR\n  a --> b");
     expect(out.startsWith("---\nconfig:\n  look: handDrawn")).toBe(true);
     expect(out).toContain("---\nflowchart LR\n  a --> b");
+  });
+
+  it("draws hand-drawn in Excalifont with a fixed seed by default", () => {
+    const out = sketchMermaid("flowchart LR\n  a --> b");
+    expect(out).toContain("handDrawnSeed: 7");
+    expect(out).toContain(`fontFamily: "${SKETCH_FONT_FAMILY}"`);
+    expect(out).toContain('fontSize: "17px"');
+  });
+
+  it.each(["classic", "neo"] as const)("draws the %s look in a plain font, without the hand-drawn seed", (look) => {
+    const out = sketchMermaid("flowchart LR\n  ok{Valid?} --> b", false, undefined, look);
+    expect(out.startsWith(`---\nconfig:\n  look: ${look}\n  theme: base`)).toBe(true);
+    expect(out).not.toContain("handDrawn");
+    expect(out).not.toContain("Excalifont");
+    expect(out).toContain(`fontFamily: "${PLAIN_FONT_FAMILY}"`);
+    // The palette and shape colours stay.
+    expect(out).toContain(`classDef sketchDecision fill:${sketchPalette(false).yellow}`);
+  });
+
+  it("leaves a diagram with its own front matter alone in any look", () => {
+    const own = "---\nconfig:\n  look: handDrawn\n---\nflowchart LR\n  a --> b";
+    expect(sketchMermaid(own, false, undefined, "classic")).toBe(own);
   });
 
   it("leaves a diagram with its own front matter or init directive alone", () => {
@@ -35,6 +57,17 @@ describe("sketchMermaid", () => {
     expect(out).toContain(`background: "${dark.canvas}"`);
     expect(out).toContain(`classDef sketchDecision fill:${dark.yellow}`);
     expect(out).not.toContain(sketchPalette(false).yellow);
+  });
+});
+
+describe("diagramLook", () => {
+  it("reads a stored setting value, hand-drawn for anything unknown", () => {
+    expect(diagramLook("classic")).toBe("classic");
+    expect(diagramLook("neo")).toBe("neo");
+    expect(diagramLook("handDrawn")).toBe("handDrawn");
+    expect(diagramLook(undefined)).toBe("handDrawn");
+    expect(diagramLook(null)).toBe("handDrawn");
+    expect(diagramLook("sketchy")).toBe("handDrawn");
   });
 });
 

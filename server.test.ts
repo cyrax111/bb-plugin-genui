@@ -11,4 +11,12 @@ describe("the plugin's settings", () => {
       webLookups: { type: "boolean", label: "Web lookups", default: true },
     });
   });
+
+  it("offers the diagram looks, hand-drawn by default", async () => {
+    const host = createFakePluginHost({ pluginId: "genui" });
+    await plugin(host.bb);
+    expect(host.harness.registrations.settingsDescriptors).toMatchObject({
+      diagramLook: { type: "select", label: "Diagram look", options: ["handDrawn", "classic", "neo"], default: "handDrawn" },
+    });
+  });
 });

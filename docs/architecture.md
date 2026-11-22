@@ -531,6 +531,15 @@ front matter or init directive is drawn as written. The font's Latin subset
 `sketch_font` RPC; diagrams wait up to 1.5 s for it, since Mermaid measures
 text as it lays them out.
 
+The *Diagram look* setting (`diagramLook`: `handDrawn`, the default,
+`classic` or `neo`) picks the Mermaid look `sketchMermaid` writes into the
+front matter. Classic and neo keep the palette and shape colours but write in
+a plain sans-serif, so they skip the Excalifont load, and their drawn
+heights are cached under their own keys. The page reads the setting through
+`useDiagramLook` (`ui/components/diagramLook.ts`), which keeps the last value
+in localStorage so a fresh page doesn't draw hand-drawn first and then
+redraw.
+
 Every ChatGPT component the [OpenUI teardown](https://www.openui.com/blog/how-chatgpt-intelligent-ui-works)
 describes has a counterpart, except the ones that need paid data services
 BB doesn't have (product search, flights, news, stocks) and image or video
