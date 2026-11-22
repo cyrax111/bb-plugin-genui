@@ -52,6 +52,7 @@ import { AGENT_INSTRUCTIONS, AGENT_INSTRUCTIONS_WEB_OFF, CODE_WORK_INSTRUCTIONS,
 import { foundImageSchema, wikiPhotoSchema } from "./web/commons";
 import { locatedSchema } from "./web/geocode";
 import { createWebLookups, MAX_TILE_ZOOM } from "./web/lookups";
+import { DEFAULT_DIAGRAM_LOOK, DIAGRAM_LOOKS, type DiagramLook } from "./ui/components/sketch";
 import { createProjectSource, projectReader } from "./project/source";
 import { createEnvironmentsSource } from "./project/environments";
 import type { EnvironmentDetailResult } from "./core/environments";
@@ -69,6 +70,19 @@ export const MOTION_SETTINGS = {
     description:
       "Lets inline UI move: text fades in, rows and cards rise into place, charts draw, sections glide open, maps and carousels scroll smoothly, and 3D scenes and shaders play. Off, nothing moves: everything appears at once, transitions are instant, and 3D scenes and shaders hold a still frame. The system's reduced-motion setting is honoured either way. Sandboxed apps keep their own motion.",
     default: true,
+  },
+} as const;
+
+/** Declared here so BB lists it; the page reads it (ui/components/diagramLook.ts). */
+export const DIAGRAM_SETTINGS = {
+  diagramLook: {
+    type: "select",
+    label: "Diagram look",
+    description:
+      "How Diagram draws Mermaid diagrams. Hand-drawn: rough strokes and hachure fills in Excalifont, like Excalidraw. Classic: Mermaid's straight lines and solid fills. Neo: Mermaid's newer, cleaner look. Classic and Neo use a plain sans-serif font. All three use the same colours, and a diagram that sets its own style keeps it.",
+    options: [...DIAGRAM_LOOKS] as DiagramLook[],
+    experimental_optionLabels: { handDrawn: "Hand-drawn (default)", classic: "Classic", neo: "Neo" },
+    default: DEFAULT_DIAGRAM_LOOK,
   },
 } as const;
 
@@ -224,6 +238,7 @@ export const rpcContract = defineRpcContract({
 export default async function plugin(bb: BbPluginApi) {
   const web = createWebLookups(bb);
   bb.settings.define(MOTION_SETTINGS);
+  bb.settings.define(DIAGRAM_SETTINGS);
   /** Image searches and Wikipedia photos (Map places) for markdown renderings: the photo found, or null (none, or lookups off). */
   const findImage = {
     search: async (query: string) => {

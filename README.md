@@ -41,7 +41,7 @@ BB shows a card with a plan switch, a seat slider and a live total. Moving the s
 - **Files instead of retyped numbers.** The agent saves what a tool printed and the component reads it: test reports (vitest, jest, JUnit), logs, ESLint / `tsc` / SARIF findings, coverage (lcov, istanbul, coverage.py, Go), `npm outdated` and `npm audit`, CI runs, HAR files, hyperfine benchmarks. Code is shown from the file, at the lines asked for. Tables, charts and metrics say where their numbers came from: the file they loaded, or the `source:` the agent gave.
 - **Your BB project, read live.** `Changes()`, `Commits()`, `PullRequest()`, `Threads()` and `Environments()` show the thread's diff, its branch, its pull request, its workers and your worktrees, straight from BB.
 - **Evidence you can check.** Acceptance grids that say what was really verified and by whom, image comparisons with a pixel difference, transcripts aligned word by word with their word error rate, and the chain from a commit to what is actually installed or deployed.
-- **At home in BB.** Components use BB's own colours and type, follow light and dark mode, render while the reply streams, and keep their state as you scroll back. They follow your system's reduced-motion setting, and the plugin's *Animations* setting turns motion off altogether.
+- **At home in BB.** Components use BB's own colours and type, follow light and dark mode, render while the reply streams, and keep their state as you scroll back. They follow your system's reduced-motion setting, and the plugin's *Animations* setting turns motion off altogether. Diagrams are hand-drawn in the Excalidraw style by default; the *Diagram look* setting switches them to Mermaid's *Classic* or *Neo* look.
 
 <table>
   <tr>

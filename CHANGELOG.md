@@ -4,6 +4,11 @@ What changed in each version of the Generative UI plugin for BB. Update an insta
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Diagram look setting.** Choose how Diagram draws Mermaid: *Hand-drawn* (the Excalidraw style, still the default), *Classic* or *Neo*. Classic and Neo keep the same colours but use a plain sans-serif font instead of Excalifont. A diagram that brings its own front matter or init directive is still drawn as written.
+
 ## [0.3.2] - 2026-11-07
 
 ### Fixed
